@@ -2,6 +2,13 @@
 
 An enterprise-grade Retrieval-Augmented Generation (RAG) system built with Python, LangChain, and ChromaDB. This customer care assistant dynamically references three distinct knowledge facets—unstructured engineering guides, structured FAQ files, and historical relational tickets—to provide grounded, hallucination-free answers to critical inquiries such as troubleshooting slow connectivity, billing autopay setups, and resolving call drops.
 
+## 🏗️ System Architecture Blueprint
+
+Below is the conceptual layout of the platform's multi-source processing and deterministic generation cycle:
+
+![System Architecture Blueprint](image_M4rByH.png)
+
+---
 
 ## 📖 Project Overview
 
