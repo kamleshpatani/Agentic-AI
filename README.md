@@ -1,5 +1,5 @@
 
-🛍️ AI Shopping Agent
+# 🛍️ AI Shopping Agent
 
 An intelligent, autonomous AI Shopping Assistant built with Python, Streamlit, and SQLite. Inspired by Amazon's Rufus, this agent handles conversational product searches, processes multi-modal image inputs to find similar products, computes real-time product rating analytics, handles out-of-scope requests gracefully, and safely executes autonomous checkouts.
 
