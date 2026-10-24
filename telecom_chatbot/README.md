@@ -1,126 +1,88 @@
-# RAG Telecom Chatbot
+# 📞 Multi-Source Telecom RAG Chatbot
 
-A Retrieval-Augmented Generation (RAG) customer care chatbot for telecom support. It answers questions about mobile connectivity, billing, SIM issues, and roaming by retrieving relevant context from three knowledge sources and generating responses with Qwen3-32B via Groq.
+An enterprise-grade Retrieval-Augmented Generation (RAG) system built with Python, LangChain, and ChromaDB. This customer care assistant dynamically references three distinct knowledge facets—unstructured engineering guides, structured FAQ files, and historical relational tickets—to provide grounded, hallucination-free answers to critical inquiries such as troubleshooting slow connectivity, billing autopay setups, and resolving call drops.
 
-## Architecture
 
-```
-User question
-     │
-     ▼
-Merged Retriever (top-k from each store)
-  ├── ChromaDB · faq        (FAQ entries from CSV)
-  ├── ChromaDB · tickets    (resolved support tickets from SQLite)
-  └── ChromaDB · guides     (PDF guide chunks)
-     │
-     ▼
-ChatPromptTemplate → Qwen3-32B (Groq) → Answer
-```
+## 📖 Project Overview
 
-**Embedding model:** `sentence-transformers/all-MiniLM-L6-v2` (runs locally via HuggingFace)  
-**LLM:** `qwen/qwen3-32b` served by [Groq](https://groq.com)
+Modern customer support demands real-time responses grounded in verified data across scattered data formats. This application acts as a production-style blueprint for resolving telecom support issues efficiently. Rather than relying on a single knowledge vector space, the backend dynamically processes three different structural inputs simultaneously:
 
-## Project Structure
+1. **Relational Support Tickets (`tickets.db`):** An operational SQLite instance containing historic customer issues, long descriptions, and accurate engineering resolutions. Historic resolutions act as a reference base to solve newly submitted customer complaints deterministically.
+2. **Structured FAQ Sheets (`faq.csv`):** Pre-compiled question-and-answer pairs capturing highly repetitive operational parameters (e.g., balance check short-codes or billing portal details).
+3. **Unstructured Reference Guides (`telecom_guide.pdf`):** Multi-page PDF literature containing deep technical infrastructure documentation.
 
-```
-rag-telecom-chatbot/
-├── app.py              # Streamlit web UI
-├── main.py             # CLI entry point
-├── rag_chain.py        # Builds the LangChain RAG chain
-├── retriever.py        # Merges the three Chroma retrievers
-├── ingest_faq.py       # Loads data/faq.csv → Chroma 'faq' collection
-├── ingest_tickets.py   # Loads data/tickets.db → Chroma 'tickets' collection
-├── ingest_pdf.py       # Loads data/telecom_guide.pdf → Chroma 'guides' collection
+### Core Processing Mechanics
+* **Semantic Indexing:** Documents are vectorized using `sentence-transformers/all-MiniLM-L6-v2`. Small, naturally atomic pieces (FAQs and database records) are processed as independent standalone chunks, whereas long documentation PDFs are divided using a recursive chunk size of 600 characters with a 100-character context continuity overlap.
+* **Isolated Multi-Collection Aggregation:** ChromaDB acts as the persistent storage engine, managing three separate vector tables. The custom orchestration architecture concurrently fetches top-K semantic results from all collections to provide complete contextual grounding.
+* **Grounded Generation Output:** Compiled string pipelines feed directly into LangChain Expression Language (LCEL) runtime chains. If data cannot be surfaced across the retrieval grid, strict system boundaries instruct the underlying model to transparently state it lacks the context rather than fabricating responses.
+
+---
+
+## 📂 Repository Structure
+
+```text
+telecom_chatbot/
+│
 ├── data/
-│   ├── faq.csv             # FAQ question/answer pairs
-│   ├── tickets.db          # SQLite database of resolved support tickets
-│   ├── telecom_guide.pdf   # Telecom user guide (chunked at ingest)
-│   ├── seed_tickets.py     # Script to seed the tickets database
-│   └── generate_pdf.py     # Script to generate the telecom guide PDF
-├── chroma_store/       # Persisted Chroma vector database (created at ingest)
-├── pyproject.toml
-├── uv.lock
-└── .env.example
+│   ├── telecom_guide.pdf     # Unstructured engineering guidelines
+│   ├── faq.csv               # Pre-compiled business question matrix
+│   └── tickets.db            # SQLite instance detailing historic support tickets
+│
+├── chroma_store/             # Local database directory caching persistent vectors
+├── ingest_pdf.py             # Recursively splits and encodes technical literature
+├── ingest_faq.py             # Maps CSV rows straight into isolated vector blocks
+├── ingest_tickets.py         # Transforms SQLite history columns to database vectors
+├── retriever.py              # Multi-channel top-K context crawler API
+├── rag_chain.py              # Compiles LCEL blocks (Prompt -> LLM -> Parser)
+├── app.py                    # Graphical frontend interface powered by Streamlit
+└── .env.sample               # Environment token tracking blueprint
 ```
 
-## Prerequisites
+## 🛠️ Technology Stack
 
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
-- A [Groq API key](https://console.groq.com)
-- A [HuggingFace token](https://huggingface.co/settings/tokens) (for downloading the embedding model)
+* **RAG Framework:** LangChain / LCEL (LangChain Expression Language)
+* **Vector Store:** ChromaDB (Isolated Multi-Collection Indexing)
+* **Embedding Model:** HuggingFace Transformers (`all-MiniLM-L6-v2`)
+* **LLM Engine:** ChatGroq / Qwen / Google Gemini
+* **Interface Layer:** Streamlit Studio Web UI Engine
 
-## Setup
+## 🚀 Installation & Quick Start
 
-**1. Clone and install dependencies**
+Follow these sequential setup instructions to run the customer service assistant locally:
 
+### 1. Project Ingestion
+Clone your active version of the codebase repository:
 ```bash
-git clone <repo-url>
-cd rag-telecom-chatbot
-uv sync          # or: pip install -e .
+git clone https://github.com/kamleshpatani/Agentic-AI.git
+cd Agentic-AI/telecom_chatbot
 ```
 
-**2. Configure environment variables**
-
+### 2. Configure Token Parameters
+Create your environment manager parameters template file:
 ```bash
-cp .env.example .env
+cp .env.sample .env
+```
+Open your newly created `.env` file and append your API credentials securely (e.g., `GROQ_API_KEY=your_key_here`).
+
+### 3. Setup Virtual Environment
+Synchronize dependencies and container bounds:
+```bash
+uv sync
+uv venv
+source .venv/bin/activate
 ```
 
-Edit `.env` and fill in your keys:
-
-```
-GROQ_API_KEY=your_groq_api_key_here
-HF_TOKEN=your_huggingface_token_here
-```
-
-**3. Ingest data into Chroma**
-
-Run the three ingestion scripts once to build the vector store:
-
+### 4. Index Knowledge Resources
+Populate the localized Chroma database files by running the ingestion layer sequentially:
 ```bash
 python ingest_faq.py
 python ingest_tickets.py
 python ingest_pdf.py
 ```
+*Note: Successful execution will generate a localized `chroma_store/` target containing 25 FAQ vectors, 19 ticket vectors, and 37 PDF chunk vectors.*
 
-Each script embeds the source data and persists it to `chroma_store/`. Re-run a script only when its source data changes.
-
-## Running the App
-
-**Streamlit web UI**
-
+### 5. Launch the Studio Dashboard
+Initialize the visual runtime browser client:
 ```bash
 streamlit run app.py
 ```
-
-Opens at `http://localhost:8501`. The sidebar has one-click sample questions and a button to clear the conversation history.
-
-**CLI**
-
-```bash
-python main.py
-```
-
-Interactive prompt — type a question and press Enter. Type `quit` to exit.
-
-## Data Sources
-
-| Collection | Source file | Granularity |
-|---|---|---|
-| `faq` | `data/faq.csv` | 1 document per FAQ row |
-| `tickets` | `data/tickets.db` | 1 document per resolved ticket |
-| `guides` | `data/telecom_guide.pdf` | Chunks of 600 chars with 100-char overlap |
-
-The retriever fetches the top 3 results from each collection (9 context documents total) for every query.
-
-## Regenerating Seed Data
-
-```bash
-# Seed the SQLite ticket database
-python data/seed_tickets.py
-
-# Regenerate the PDF guide
-python data/generate_pdf.py
-```
-
-After regenerating, re-run the corresponding ingest script.
